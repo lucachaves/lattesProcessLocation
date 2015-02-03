@@ -23,7 +23,7 @@ module ApplicationHelper
 		id16s = loc.get_id16s()
 		
 		id16s.each{|id16|
-			# id16 = "1123365855931365"
+			# id16 = "6489817091609815"
 			puts "########## #{id16}"
 
 			birth = loc.get_birth(id16)
@@ -82,16 +82,49 @@ module ApplicationHelper
 					)
 					text
 				end
+
+				def state_br(state)
+					states = {
+						"ac" => "acre",
+						"al" => "alagoas",
+						"ap" => "amapa",
+						"am" => "amazonas",
+						"ba" => "bahia",
+						"ce" => "ceara",
+						"es" => "espirito Santo",
+						"go" => "goias",
+						"ma" => "maranhao",
+						"mt" => "mato grosso",
+						"ms" => "mato grosso do sul",
+						"mg" => "minas gerais",
+						"pa" => "para",
+						"pb" => "paraiba",
+						"pr" => "parana",
+						"pe" => "pernambuco",
+						"pi" => "piaui",
+						"rj" => "rio de janeiro",
+						"rn" => "rio grande do norte",
+						"rs" => "rio grande do sul",
+						"ro" => "rondonia",
+						"rr" => "roraima",
+						"sc" => "santa catarina",
+						"sp" => "sao paulo",
+						"se" => "sergipe",
+						"to" => "tocantins"
+					}
+					return states[state]
+				end
 			end
 		end
 
 		class LocationLattesDump
 
 			def initialize()
-				@location_dump = Sequel.connect('postgres://postgres:postgres@192.168.56.101/latteslocationdump')
-				@geo = LocationGeoNames.new
+				@con = ConnectionDB.new
+				@location_dump = @con.get_location_dump
+				@geonames = @con.get_geoname
+				@locationGeo = LocationGeoNames.new
 				# process_code_country()
-				# byebug
 			end
 
 			def get_locations()
@@ -122,34 +155,30 @@ module ApplicationHelper
 				@location_dump[:locations].where("id16 = '#{id16}' and kind != 'birth' and kind != 'work'").all
 			end
 
-			def process_code_country
-				ids = get_ids()
-				geoname = @geo.get_connection()
-				ids.each{|id|
-					location = @location_dump[:locations].where(id: id).first
-					unless location[:codecountry].nil?
-						country = geoname[:countryinfo].where(iso_alpha3: location[:codecountry]).first
-						puts location[:codecountry]
-						# byebug
-						# puts country[:iso_alpha2]
-						@location_dump[:locations].where(id: id).update(codecountry: country[:iso_alpha2])
-					else
-						country = @location_dump[:countries].where(name_pt: Util.process_text(location[:country])).first
-						unless country.nil?
-							country = geoname[:countryinfo].where("lower(name) = '#{country[:name_en]}'").first
-							@location_dump[:locations].where(id: id).update(codecountry: country[:iso_alpha2])
-						end
-					end
-				}
-			end
+			# def process_code_country
+			# 	get_ids().each{|id|
+			# 		location = @location_dump[:locations].where(id: id).first
+			# 		unless location[:codecountry].nil?
+			# 			location[:codecountry]
+			# 			country = @geonames[:countryinfo].where(iso_alpha3: ).first
+			# 			@location_dump[:locations].where(id: id).update(codecountry: country[:iso_alpha2])
+			# 		else
+			# 			country = @location_dump[:countries].where(name_pt: Util.process_text(location[:country])).first
+			# 			unless country.nil?
+			# 				name = country[:name_en]
+			# 				country = @geonames[:countryinfo].where(Sequel.ilike(:name, name)).first
+			# 				@location_dump[:locations].where(id: id).update(codecountry: country[:iso_alpha2])
+			# 			end
+			# 		end
+			# 	}
+			# end
 
 			def create_location(place)
 				place = Util.process_fields(place)
 				place[:latitude] = nil
 				place[:longitude] = nil
-				result = @geo.get_latitude(place)
+				result = @locationGeo.get_latitude(place)
 				place = result unless result.nil?
-				# byebug
 				l = Location.find_or_create_by(
 					city: place[:city], 
 					city_ascii: place[:city_ascii], 
@@ -168,61 +197,89 @@ module ApplicationHelper
 		class LocationGeoNames
 
 			def initialize()
-				@geonames = Sequel.connect('postgres://postgres:postgres@192.168.56.101/geonames')
-			end
-
-			def get_connection()
-				@geonames
+				@con = ConnectionDB.new
+				@location_dump = @con.get_location_dump
+				@geonames = @con.get_geoname
 			end
 
 			def get_latitude(location)
-				place = {}
-				geo = @geonames[:geoname].where("lower(asciiname) = '#{location[:city_ascii]}'").all
-				
-				if geo.size == 1
-					geoname = geo.first 
-					state = @geonames[:admin1codes].where(countrycode: geoname[:country], admin1_code: geoname[:admin1]).all[0]
-					country = @geonames[:countryinfo].where(iso_alpha2: geoname[:country]).first
-					
-					place[:city] = geoname[:name] 
-					place[:city_ascii] = geoname[:asciiname]
-					place[:state] = state[:name] 
-					place[:state_ascii] = state[:alt_name_english] 
-					place[:country] = country[:name]
-					place[:country_ascii] = country[:name]
-					place[:country_abbr] = country[:iso_alpha2]
-					place[:latitude] = geoname[:latitude]
-					place[:longitude] = geoname[:longitude]
-					
-					place = Util.process_fields(place)
-
-					return place
+				if location[:city].nil? # and location[:uf].nil? and location[:country].nil? and location[:country_abbr].nil?
+					return nil
 				end
 
-				# country = @geonames[:countryinfo].where(iso_alpha2: location[:country]).all[0]
-				# geo = @geonames[:geoname].where("lower(asciiname) = '#{location[:city_ascii]}' AND lower(country) = '#{location[:city_ascii]}'").all
-				# TODO if result > 1 comparar state ou country
-				# 'saint martin d'heres'
+				geoname = @geonames[:geoname].where(Sequel.ilike(:asciiname, @geonames[:geoname].escape_like(location[:city_ascii]))).all
+				
+				if geoname.size == 1
+					create_place_geoname(geoname.first)
+				elsif geoname.size > 1
+					puts " #######{location[:country]} "
+					country = @location_dump[:countries].where(name_pt: location[:country]).all[0]
+					# byebug
+					geocountry = @geonames[:countryinfo].where(Sequel.ilike(:name, country[:name_en])).all[0]
+					countrycode = geocountry[:iso_alpha2]
 
-				# if 
-					
-				# else
+					result = @geonames[:geoname].where(
+						Sequel.ilike(:asciiname, @geonames[:geoname].escape_like(location[:city_ascii])),
+						Sequel.ilike(:country, countrycode)
+					).all
+					if result.size == 1
+						create_place_geoname(result[0])
+					elsif result.size > 1 and location[:country] == "brasil"
+						statename = Util.state_br(location[:state])
+						state = @geonames[:admin1codes].where(Sequel.ilike(:countrycode, countrycode), Sequel.ilike(:alt_name_english, statename)).all[0]
+						r = @geonames[:geoname].where(
+							Sequel.ilike(:asciiname, @geonames[:geoname].escape_like(location[:city_ascii])),
+							Sequel.ilike(:admin1, state[:admin1_code]),
+							Sequel.ilike(:country, countrycode)
+						).all
+						if r.size == 1
+							create_place_geoname(r[0])
+						else
+							nil
+						end
+					else
+						nil
+					end
+				elsif geoname == []
 					nil
-				# end
+				end
+
+
+			end
+
+			def create_place_geoname(geoname)
+				place = {}
+				state = @geonames[:admin1codes].where(countrycode: geoname[:country], admin1_code: geoname[:admin1]).all[0]
+				country = @geonames[:countryinfo].where(iso_alpha2: geoname[:country]).first
+				
+				place[:city] = geoname[:name] 
+				place[:city_ascii] = geoname[:asciiname]
+				place[:state] = state[:name] 
+				place[:state_ascii] = state[:alt_name_english] 
+				place[:country] = country[:name]
+				place[:country_ascii] = country[:name]
+				place[:country_abbr] = country[:iso_alpha2]
+				place[:latitude] = geoname[:latitude]
+				place[:longitude] = geoname[:longitude]
+				
+				place = Util.process_fields(place)
 			end
 
 		end
 
-		class LocationBrCities
-
+		class ConnectionDB
 			def initialize()
-				@citiesbr = Sequel.connect('postgres://postgres:postgres@192.168.56.101/mc-munic')
+				@geonames = Sequel.connect('postgres://postgres:postgres@192.168.56.101/geonames')
+				@location_dump = Sequel.connect('postgres://postgres:postgres@192.168.56.101/latteslocationdump')
 			end
 
-			def get_locations()
-				@citiesbr[:munic].all
+			def get_geoname
+				@geonames
 			end
 
+			def get_location_dump
+				@location_dump
+			end
 		end
 
 end
