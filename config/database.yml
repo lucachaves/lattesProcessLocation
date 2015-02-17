@@ -6,7 +6,7 @@
 #
 default: &default
   # adapter: sqlite3
-  pool: 5
+  pool: 200
   timeout: 5000
   adapter: postgresql
   username: postgres
