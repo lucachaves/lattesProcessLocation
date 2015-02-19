@@ -5,62 +5,29 @@ require "thread/pool"
 module LocationHelper
 
 	def process()
-		# TODO criar SQL único
-		c = ConnectionHelper::LocationLattesDump.new
-		
-		locations = []
-		c.get_locations_birth().each{|l|
-			location = {}
-			name = [l[:city], l[:state], l[:country]].join(", ")
-			location[:location] = {city: l[:city], state: l[:state], country: l[:country]}
-			location[:ids] = [] if location[name].nil?
-			location[:ids] << l[:id16]
-			locations << location
-		}
-
-		bar = ProgressBar.new(211898)
-		pool = Thread.pool(50)
-
-		locations.each{|l|
-			pool.process do
-				place = c.create_location(l[:location])
-				next if place.nil?
-				point = Location.find_or_create_by(
-					city: place[:city], 
-					city_ascii: place[:city_ascii], 
-					uf: place[:state], 
-					country: place[:country],
-					country_ascii: place[:country_ascii],
-					country_abbr: place[:country_abbr],
-					latitude: place[:latitude],
-					longitude: place[:longitude]
-				)
-				l[:ids].each{|id16|
-					p = Person.find_or_create_by(id16: id16)
-					unless point.nil?
-						p.location_id = point.id
-						p.save
-					end
-					bar.increment!
-				}
-			end
-		}
-		pool.shutdown
-
+		process_birth()
+		process_work()
+		process_degree()
 	end
 
-	# TODO criar SQL único
-	def processSingle()
-		c = ConnectionHelper::LocationLattesDump.new
+	def process_birth()
+		connection = ConnectionHelper::ConnectionDB.new
 		
 		locations = {}
-		result = c.get_locations_birth()
+		result = connection.get_locations_birth()
 		bar = ProgressBar.new(result.size)
 		puts "Extract Locations by place"
 		result.each{|l|
 			city = UtilHelper::Util.process_ascii(l[:city])
+			city = UtilHelper::Util.process_downcase(city)
+			city = UtilHelper::Util.clean_text(city)
 			state = UtilHelper::Util.process_ascii(l[:state])
+			state = UtilHelper::Util.process_downcase(state)
+			state = UtilHelper::Util.clean_text(state)
 			country = UtilHelper::Util.process_ascii(l[:country])
+			country = UtilHelper::Util.process_downcase(country)
+			country = UtilHelper::Util.clean_text(country)
+
 			name = [city, state, country].join(", ").to_sym
 			locations[name] = {} if locations[name].nil?
 			locations[name][:location] = {city: city, state: state, country: country}
@@ -68,20 +35,20 @@ module LocationHelper
 			locations[name][:ids] << l[:id16]
 			bar.increment!
 		}
+		# locations = Hash[locations.sort]
 
 		bar = ProgressBar.new(locations.size)
 		puts "Extract Locations by LatLon"
 		loc_latlon = {}
 		locations.each{|index, value|
 
-			latlon = c.get_position(
+			latlon = connection.get_position(
 				locations[index][:location][:city], 
 				locations[index][:location][:state], 
 				locations[index][:location][:country]
 			)
 			latlon_index = (latlon.nil?)? " " : latlon[:latitude].to_s+latlon[:longitude].to_s
 			
-			# byebug
 			loc_latlon[latlon_index.to_sym] ||= {}
 			loc_latlon[latlon_index.to_sym][:latlon] = latlon
 			loc_latlon[latlon_index.to_sym][:locations] ||= []
@@ -148,6 +115,68 @@ module LocationHelper
 		Person.import([:id, :id16, :location_id], temp_people)
 
 		byebug
+	end
+
+	def process_work()
+		connection = ConnectionHelper::ConnectionDB.new
+		
+		locations = {}
+		result = connection.get_locations_work()
+		bar = ProgressBar.new(result.size)
+		puts "Extract Locations by place"
+		result.each{|l|
+			bar.increment!
+			place = UtilHelper::Util.process_downcase(l[:place])
+			place = UtilHelper::Util.clean_text(place)
+			name = place
+			place = UtilHelper::Util.process_ascii(place).to_sym
+
+			locations[place] ||= {} 
+			locations[place][:university_ascii] = place.to_s
+			locations[place][:university] = name
+			locations[place][:ids] ||= []
+			locations[place][:ids] << l[:id16]
+		}
+
+		bar = ProgressBar.new(locations.size)
+		puts "Extract Locations by LatLon"
+		loc_latlon = {}
+		locations.each{|index, value|
+			bar.increment!
+			latlon = connection.get_position_by_university(locations[index][:university_ascii])
+			latlon_index = (latlon.nil?)? " " : latlon[:latitude].to_s+latlon[:longitude].to_s
+
+			loc_latlon[latlon_index.to_sym] ||= {}
+			loc_latlon[latlon_index.to_sym][:latlon] = latlon
+			loc_latlon[latlon_index.to_sym][:places] ||= {}
+			loc_latlon[latlon_index.to_sym][:places][locations[index][:university_ascii].to_sym] ||= [] 
+			loc_latlon[latlon_index.to_sym][:places][locations[index][:university_ascii].to_sym] |= value[:ids]
+		}
+
+		# countLoc = 0
+		# storesLoc = []
+		# bar = ProgressBar.new(result.size)
+		# puts "Create store"
+
+		# loc_latlon.each{|index, value|
+		# 	countLoc += 1
+		# 	storesLoc << {location_id: countLoc, location: value[:latlon]}
+		# 	value[:ids].each{|id16|
+		# 		if value[:latlon].nil?
+		# 			storesPeople << {id16: id16, location_id: nil}
+		# 		else
+		# 			storesPeople << {id16: id16, location_id: countLoc}
+		# 		end
+		# 		bar.increment!
+		# 	}
+		# }
+
+		byebug
+
+	end
+
+	def process_degree()
+
 	end
 
 end

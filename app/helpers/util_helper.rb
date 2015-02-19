@@ -1,4 +1,3 @@
-
 module UtilHelper
 
 	class Util
@@ -34,7 +33,6 @@ module UtilHelper
 
 		class << self
 			def process_fields(fields)
-
 				unless fields[:city].nil?
 					fields[:city] = process_text(fields[:city]) 
 					fields[:city_ascii] = process_ascii(fields[:city])
@@ -48,31 +46,30 @@ module UtilHelper
 						end
 					}
 				end
-
-				fields[:state] = process_text(fields[:state]) unless fields[:state].nil?
-				
-				unless fields[:country].nil?
-					fields[:country] = process_text(fields[:country]) 
-					fields[:country_ascii] = process_ascii(fields[:country])
-				end
-
-				fields
 			end
 
-			def process_text(text)
+			def clean_uni(uni)
+				uni = "univesidade de sao paulo" if uni.include? "univesidade de sao paulo"
+				uni = "univesidade de sao paulo" if uni.include? "usp"
+			end
+
+			def clean_text(text)
 				# TODO remover caracteres espciais ($;-&)
+				text.gsub!(/\s+/, " ")
+				text.gsub!(/^\s/, "")
+				text.gsub!(/\s$/, "")
+				# text.gsub!(/[~`]/, "")
+				# text.gsub!(/-\s+capital/, "")
+				# text.gsub!(/[()]/, " ")
+				text
+			end
+			
+			def process_downcase(text)
 				text = text.tr(
 					"ÀÁÂÃÄÅĀĂĄÇĆĈĊČÐĎĐÈÉÊËĒĔĖĘĚĜĞĠĢĤĦÌÍÎÏĨĪĬĮİĴĵĶĹĻĽĿŁÑŃŅŇŊÒÓÔÕÖØŌŎŐŔŖŘŚŜŞŠŢŤŦÙÚÛÜŨŪŬŮŰŲŴÝŶŸŹŻŽ",
 					"àáâãäåāăąçćĉċčðďđèéêëēĕėęěĝğġģĥħìíîïĩīĭįıJjķĺļľŀłñńņňŋòóôõöøōŏőŕŗřśŝşšţťŧùúûüũūŭůűųŵýŷYźżž"
 				)
-				text = text.downcase
-				text.gsub!(/\s+/, " ")
-				text.gsub!(/^\s/, "")
-				text.gsub!(/\s$/, "")
-				text.gsub!(/[~`]/, "")
-				text.gsub!(/-\s+capital/, "")
-				text.gsub!(/[()]/, " ")
-				text
+				text.downcase
 			end
 
 			def process_ascii(text)
@@ -80,24 +77,11 @@ module UtilHelper
 					"ÀÁÂÃÄÅàáâãäåĀāĂăĄąÇçĆćĈĉĊċČčÐðĎďĐđÈÉÊËèéêëĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħÌÍÎÏìíîïĨĩĪīĬĭĮįİıĴĵĶķĸĹĺĻļĽľĿŀŁłÑñŃńŅņŇňŉŊŋÒÓÔÕÖØòóôõöøŌōŎŏŐőŔŕŖŗŘřŚśŜŝŞşŠšſŢţŤťŦŧÙÚÛÜùúûüŨũŪūŬŭŮůŰűŲųŴŵÝýÿŶŷŸŹźŻżŽž",
 					"AAAAAAaaaaaaAaAaAaCcCcCcCcCcDdDdDdEEEEeeeeEeEeEeEeEeGgGgGgGgHhHhIIIIiiiiIiIiIiIiIiJjKkkLlLlLlLlLlNnNnNnNnnNnOOOOOOooooooOoOoOoRrRrRrSsSsSsSssTtTtTtUUUUuuuuUuUuUuUuUuUuWwYyyYyYZzZzZz"
 				)
-				text = text.downcase
-				text.gsub!(/\s+/, " ")
-				text.gsub!(/^\s/, "")
-				text.gsub!(/\s$/, "")
-				text
+				text.downcase
 			end
 
 			def state_br(state)
 				return @states[state]
-			end
-
-			def create_location_latlon(place)
-				place = Util.process_fields(place)
-				place[:latitude] = nil
-				place[:longitude] = nil
-				result = @locationGeo.get_latitude(place)
-				place = result unless result.nil?
-				place
 			end
 
 		end
