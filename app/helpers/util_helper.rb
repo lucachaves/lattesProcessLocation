@@ -8,8 +8,8 @@ module UtilHelper
 			"am" => "amazonas",
 			"ba" => "bahia",
 			"ce" => "ceara",
-			"df" => "federal district",
-			"es" => "espirito Santo",
+			"df" => "distrito federal",
+			"es" => "espirito santo",
 			"go" => "goias",
 			"ma" => "maranhao",
 			"mt" => "mato grosso",
@@ -48,19 +48,22 @@ module UtilHelper
 				end
 			end
 
+			def clean_city(city)
+				# city.gsub!(/-\s+capital/, "")
+			end
+
 			def clean_uni(uni)
-				uni = "univesidade de sao paulo" if uni.include? "univesidade de sao paulo"
-				uni = "univesidade de sao paulo" if uni.include? "usp"
+				# uni = "univesidade de sao paulo" if uni.include? "univesidade de sao paulo"
+				# uni = "univesidade de sao paulo" if uni.include? "usp"
 			end
 
 			def clean_text(text)
 				# TODO remover caracteres espciais ($;-&)
+				# remover de, da(s), do(s) 
+				text.gsub!(/[\~\`\'\´\"\.\-\/\,\(\)]/, " ")
 				text.gsub!(/\s+/, " ")
 				text.gsub!(/^\s/, "")
 				text.gsub!(/\s$/, "")
-				# text.gsub!(/[~`]/, "")
-				# text.gsub!(/-\s+capital/, "")
-				# text.gsub!(/[()]/, " ")
 				text
 			end
 			
@@ -73,6 +76,7 @@ module UtilHelper
 			end
 
 			def process_ascii(text)
+				text = clean_text(text)
 				text = text.tr(
 					"ÀÁÂÃÄÅàáâãäåĀāĂăĄąÇçĆćĈĉĊċČčÐðĎďĐđÈÉÊËèéêëĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħÌÍÎÏìíîïĨĩĪīĬĭĮįİıĴĵĶķĸĹĺĻļĽľĿŀŁłÑñŃńŅņŇňŉŊŋÒÓÔÕÖØòóôõöøŌōŎŏŐőŔŕŖŗŘřŚśŜŝŞşŠšſŢţŤťŦŧÙÚÛÜùúûüŨũŪūŬŭŮůŰűŲųŴŵÝýÿŶŷŸŹźŻżŽž",
 					"AAAAAAaaaaaaAaAaAaCcCcCcCcCcDdDdDdEEEEeeeeEeEeEeEeEeGgGgGgGgHhHhIIIIiiiiIiIiIiIiIiJjKkkLlLlLlLlLlNnNnNnNnnNnOOOOOOooooooOoOoOoRrRrRrSsSsSsSssTtTtTtUUUUuuuuUuUuUuUuUuUuWwYyyYyYZzZzZz"

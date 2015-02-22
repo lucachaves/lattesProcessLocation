@@ -2,12 +2,14 @@
 
 one:
   name: MyString
-  year: 1
-  university_id: 
+  start_year: 1
+  end_year: 1
+  instituition_id: 
   person_id: 
 
 two:
   name: MyString
-  year: 1
-  university_id: 
+  start_year: 1
+  end_year: 1
+  instituition_id: 
   person_id: 

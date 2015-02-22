@@ -3,7 +3,7 @@
 one:
   city: MyString
   city_ascii: MyString
-  uf: MyString
+  state: MyString
   country: MyString
   country_ascii: MyString
   country_abbr: MyString
@@ -13,7 +13,7 @@ one:
 two:
   city: MyString
   city_ascii: MyString
-  uf: MyString
+  state: MyString
   country: MyString
   country_ascii: MyString
   country_abbr: MyString

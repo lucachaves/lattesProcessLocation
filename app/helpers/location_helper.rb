@@ -19,14 +19,8 @@ module LocationHelper
 		puts "Extract Locations by place"
 		result.each{|l|
 			city = UtilHelper::Util.process_ascii(l[:city])
-			city = UtilHelper::Util.process_downcase(city)
-			city = UtilHelper::Util.clean_text(city)
 			state = UtilHelper::Util.process_ascii(l[:state])
-			state = UtilHelper::Util.process_downcase(state)
-			state = UtilHelper::Util.clean_text(state)
 			country = UtilHelper::Util.process_ascii(l[:country])
-			country = UtilHelper::Util.process_downcase(country)
-			country = UtilHelper::Util.clean_text(country)
 
 			name = [city, state, country].join(", ").to_sym
 			locations[name] = {} if locations[name].nil?
@@ -111,9 +105,15 @@ module LocationHelper
 			]
 		}
 
-		Location.import([:id, :city, :city_ascii, :uf, :country, :country_ascii, :country_abbr, :latitude, :longitude], temp_loc)
+		Location.import([:id, :city, :city_ascii, :state, :country, :country_ascii, :country_abbr, :latitude, :longitude], temp_loc)
 		Person.import([:id, :id16, :location_id], temp_people)
 
+		# result.size = 211.898
+		# locations.size = 11.870
+		# loc_latlon.size = 5.917 - 1
+		# (11870-5917-1)/11869 ~ 50%
+		# loc_latlon[:" "][:ids].size = 15863
+		# (211898-15863)/211898 ~ 92,5%
 		byebug
 	end
 
@@ -126,14 +126,12 @@ module LocationHelper
 		puts "Extract Locations by place"
 		result.each{|l|
 			bar.increment!
-			place = UtilHelper::Util.process_downcase(l[:place])
-			place = UtilHelper::Util.clean_text(place)
-			name = place
-			place = UtilHelper::Util.process_ascii(place).to_sym
+			name = UtilHelper::Util.process_downcase(l[:place])
+			place = UtilHelper::Util.process_ascii(name).to_sym
 
 			locations[place] ||= {} 
-			locations[place][:university_ascii] = place.to_s
-			locations[place][:university] = name
+			locations[place][:instituition_ascii] = place.to_s
+			locations[place][:instituition] = name
 			locations[place][:ids] ||= []
 			locations[place][:ids] << l[:id16]
 		}
@@ -143,40 +141,88 @@ module LocationHelper
 		loc_latlon = {}
 		locations.each{|index, value|
 			bar.increment!
-			latlon = connection.get_position_by_university(locations[index][:university_ascii])
+			latlon = connection.get_position_by_instituition(locations[index][:instituition_ascii])
 			latlon_index = (latlon.nil?)? " " : latlon[:latitude].to_s+latlon[:longitude].to_s
 
 			loc_latlon[latlon_index.to_sym] ||= {}
 			loc_latlon[latlon_index.to_sym][:latlon] = latlon
 			loc_latlon[latlon_index.to_sym][:places] ||= {}
-			loc_latlon[latlon_index.to_sym][:places][locations[index][:university_ascii].to_sym] ||= [] 
-			loc_latlon[latlon_index.to_sym][:places][locations[index][:university_ascii].to_sym] |= value[:ids]
+			loc_latlon[latlon_index.to_sym][:places][locations[index][:instituition_ascii].to_sym] ||= [] 
+			loc_latlon[latlon_index.to_sym][:places][locations[index][:instituition_ascii].to_sym] |= value[:ids]
 		}
 
-		# countLoc = 0
-		# storesLoc = []
-		# bar = ProgressBar.new(result.size)
-		# puts "Create store"
 
-		# loc_latlon.each{|index, value|
-		# 	countLoc += 1
-		# 	storesLoc << {location_id: countLoc, location: value[:latlon]}
-		# 	value[:ids].each{|id16|
-		# 		if value[:latlon].nil?
-		# 			storesPeople << {id16: id16, location_id: nil}
-		# 		else
-		# 			storesPeople << {id16: id16, location_id: countLoc}
-		# 		end
-		# 		bar.increment!
-		# 	}
-		# }
+		countLoc = 0
+		storesLoc = []
+		storesInst = []
+		bar = ProgressBar.new(loc_latlon.size)
+		puts "Create store"
 
+		loc_latlon.each{|index, value|
+			countLoc += 1
+			storesLoc << {location_id: countLoc, location: value[:latlon]}
+			value[:ids].each{|id16|
+				if value[:latlon].nil?
+					storesPeople << {id16: id16, location_id: nil}
+				else
+					storesPeople << {id16: id16, location_id: countLoc}
+				end
+				bar.increment!
+			}
+		}
+
+		# 210551 ~ 600
+		# (210551-62455)/210551 ~ 70%
 		byebug
-
 	end
 
 	def process_degree()
+		connection = ConnectionHelper::ConnectionDB.new
+		
+		locations = {}
+		result = connection.get_locations_degree()
+		bar = ProgressBar.new(result.size)
+		puts "Extract Locations by place"
+		result.each{|l|
+			bar.increment!
+			name = UtilHelper::Util.process_downcase(l[:place])
+			place = UtilHelper::Util.process_ascii(name).to_sym
+
+			locations[place] ||= {} 
+			locations[place][:instituition_ascii] = place.to_s
+			locations[place][:instituition] = name
+			locations[place][:idsdeg] ||= []
+			locations[place][:idsdeg] << {id16: l[:id16], kind: l[:kind_couse]}
+		}
+
+		bar = ProgressBar.new(locations.size)
+		puts "Extract Locations by LatLon"
+		loc_latlon = {}
+		locations.each{|index, value|
+			bar.increment!
+			latlon = connection.get_position_by_instituition(locations[index][:instituition_ascii])
+			latlon_index = (latlon.nil?)? " " : latlon[:latitude].to_s+latlon[:longitude].to_s
+
+			loc_latlon[latlon_index.to_sym] ||= {}
+			loc_latlon[latlon_index.to_sym][:latlon] = latlon
+			loc_latlon[latlon_index.to_sym][:places] ||= {}
+			loc_latlon[latlon_index.to_sym][:places][locations[index][:instituition_ascii].to_sym] ||= [] 
+			loc_latlon[latlon_index.to_sym][:places][locations[index][:instituition_ascii].to_sym] |= value[:idsdeg]
+		}
+
+		# 920318 ~ 71764 -1 locais com latlon
+		# loc_latlon[:" "][:"places"].size = 69986
+		# names = []; loc_latlon[:" "][:"places"].each{|k,v| names<< k}
+		# File.write("namesprodeg.txt",names.sort.join("\n"))
+		# deg = 0; loc_latlon[:" "][:"places"].each{|k,v| deg += v.size} = 161545
+		# (920318-161545)/920318 = 758773/920318 ~ 82,4
+		# byebug
+
 
 	end
 
 end
+
+
+
+

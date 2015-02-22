@@ -19,4 +19,5 @@
 temp
 temp2
 
-app/helpers/data/*.csv
+app/helpers/data/*
+app/helpers/pro/*

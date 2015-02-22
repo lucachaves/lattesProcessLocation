@@ -20,6 +20,10 @@ module ConnectionHelper
 			@location_dump[:locations].where(kind_course: 'work').all
 		end
 
+		def get_locations_degree()
+			@location_dump[:locations].where(Sequel.~(:kind_course => 'birth') & Sequel.~(:kind_course => 'work')).all
+		end
+
 		def get_distinct_locations_birth()
 			@location_dump[:locations].where(kind_course: 'birth').order(:country).distinct(:country).all
 			# @location_dump[:locations].where(kind_course: 'birth').order(:country, :state, :city).distinct(:country, :state, :city).all
@@ -30,15 +34,16 @@ module ConnectionHelper
 		end
 
 		def get_city_by_country(city, country)
-			country2 = @location_dump[:countries].where(name_ascii_pt: country).or(name_en: country).all[0]
-			@location_dump[:cities].where(city_ascii: city, country_ascii: country2[:name_en]).all
+			result = @location_dump[:countries].where(name_ascii_pt: country).or(name_en: country).all[0]
+			# byebug if result.nil?
+			@location_dump[:cities].where(city_ascii: city, country_ascii: result[:name_en]).all
 		end
 
 		def get_city_by_state(city, state)
-			@location_dump[:cities].where(city_ascii: city, country_ascii: "brasil", state_code: state).all
+			@location_dump[:cities].where(city_ascii: city, country_ascii: "brazil", state_code: state).all
 		end
 
-		def get_city_by_university(name)
+		def get_city_by_instituition(name)
 			# byebug
 			@location_dump[:instituitions].where(name_ascii: name).all
 		end
@@ -76,6 +81,5 @@ module ConnectionHelper
 			nil
 		end
 	end
-
 	
 end
