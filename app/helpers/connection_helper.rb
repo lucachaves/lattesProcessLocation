@@ -13,20 +13,19 @@ module ConnectionHelper
 		end
 
 		def get_locations_birth()
-			@location_dump[:locations].where(kind_course: 'birth').all
+			@location_dump[:locations].where(kind: 'birth').all
 		end
 
 		def get_locations_work()
-			@location_dump[:locations].where(kind_course: 'work').all
+			@location_dump[:locations].where(kind: 'work').all
 		end
 
 		def get_locations_degree()
-			@location_dump[:locations].where(Sequel.~(:kind_course => 'birth') & Sequel.~(:kind_course => 'work')).all
+			@location_dump[:locations].where(Sequel.~(:kind => 'birth') & Sequel.~(:kind => 'work')).all
 		end
 
 		def get_distinct_locations_birth()
-			@location_dump[:locations].where(kind_course: 'birth').order(:country).distinct(:country).all
-			# @location_dump[:locations].where(kind_course: 'birth').order(:country, :state, :city).distinct(:country, :state, :city).all
+			@location_dump[:locations].where(kind: 'birth').order(:country).distinct(:country).all
 		end	
 
 		def get_city(city)
@@ -35,7 +34,6 @@ module ConnectionHelper
 
 		def get_city_by_country(city, country)
 			result = @location_dump[:countries].where(name_ascii_pt: country).or(name_en: country).all[0]
-			# byebug if result.nil?
 			@location_dump[:cities].where(city_ascii: city, country_ascii: result[:name_en]).all
 		end
 
@@ -44,7 +42,6 @@ module ConnectionHelper
 		end
 
 		def get_city_by_instituition(name)
-			# byebug
 			@location_dump[:instituitions].where(name_ascii: name).all
 		end
 
@@ -63,22 +60,29 @@ module ConnectionHelper
 			
 			return nil if state.nil? or state == ''
 			result_state_br = get_city_by_state(city, state)
-			if(result_city.size > 1 and result_country.size > 1 and country == "brasil" and result_state_br.size == 1)
+			if(result_city.size > 1 and result_country.size > 1 and (country == "brasil" or country == "brazil") and result_state_br.size == 1)
 				return result_state_br[0]
 			end
 				
 			nil
 		end
 
-		def get_position_by_university(name)
-			return nil if name.nil? or name == ''
+		def get_position_by_latlon(latitude, longitude)
+			@location_dump[:cities].where(latitude: latitude, longitude: longitude).all
+		end
+
+		def get_position_by_instituition(name)
+			default = {latlon: nil, instituition: nil}
+
+			return default if name.nil? or name == ''
 			
-			result_name = get_city_by_university(name)
+			result_name = get_city_by_instituition(name)
 			if(result_name.size == 1)
-				return result_name[0]
+				result = get_position_by_latlon(result_name[0][:latitude], result_name[0][:longitude])
+				return {latlon: result[0], instituition: result_name[0]}
 			end
 			
-			nil
+			default
 		end
 	end
 	

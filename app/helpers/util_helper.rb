@@ -38,7 +38,6 @@ module UtilHelper
 					fields[:city_ascii] = process_ascii(fields[:city])
 					@states.each{|abbr, state|
 						if(fields[:city_ascii].match(/[- ,\/]\s?(#{abbr}|#{state})\s?(\.|brasil)?$/i) != nil)
-							# byebug
 							fields[:state] = abbr
 							fields[:city].gsub!(/[- ,\/]\s?(#{abbr}|#{state})(\s|\.|brasil)?$/i, "")
 							fields[:city_ascii].gsub!(/[- ,\/]\s?(#{abbr}|#{state})\s?(\.|brasil)?$/i, "")
@@ -86,6 +85,10 @@ module UtilHelper
 
 			def state_br(state)
 				return @states[state]
+			end
+
+			def state_code_br(state)
+				return @states.key(state)
 			end
 
 		end

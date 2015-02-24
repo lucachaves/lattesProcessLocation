@@ -31,6 +31,7 @@ ActiveRecord::Schema.define(version: 20150222130315) do
 
   create_table "instituitions", force: :cascade do |t|
     t.string   "name"
+    t.string   "name_ascii"
     t.string   "abbr"
     t.integer  "location_id"
     t.datetime "created_at",  null: false

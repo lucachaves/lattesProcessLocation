@@ -21,3 +21,4 @@ temp2
 
 app/helpers/data/*
 app/helpers/pro/*
+# app/helpers/store/*
