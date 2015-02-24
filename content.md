@@ -109,9 +109,9 @@ FlowMapper
 http://www.csiss.org/clearinghouse/FlowMapper/
 
 
-
+# DEGREES
 SELECT 
-  degrees.person_id, 
+  people.id16, 
   degrees.name, 
   instituitions.name_ascii, 
   instituitions.abbr, 
@@ -129,3 +129,35 @@ FROM
 WHERE 
   degrees.instituition_id = instituitions.id AND
   instituitions.location_id = locations.id;
+
+# WORKS
+SELECT 
+  people.id16, 
+  instituitions.name_ascii, 
+  instituitions.abbr, 
+  locations.city_ascii, 
+  locations.state, 
+  locations.country_ascii, 
+  locations.latitude, 
+  locations.longitude
+FROM 
+  public.people, 
+  public.instituitions, 
+  public.locations
+WHERE 
+  people.instituition_id = instituitions.id AND
+  instituitions.location_id = locations.id;
+
+# BIRTH
+SELECT 
+  people.id16, 
+  locations.city_ascii, 
+  locations.state, 
+  locations.country_ascii, 
+  locations.latitude, 
+  locations.longitude
+FROM 
+  public.people, 
+  public.locations
+WHERE 
+  people.location_id = locations.id;

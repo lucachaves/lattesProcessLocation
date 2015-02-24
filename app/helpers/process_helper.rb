@@ -79,12 +79,12 @@ module ProcessHelper
 				}
 			}
 
-			# byebug
+			# byebug	
 			# result.size = 211.898
 			# locations.size = 11.870
 			# loc_latlon.size = 5.917 - 1
 			# (11870-5917-1)/11869 ~ 50%
-			# loc_latlon[:" "][:ids].size = 15863
+			# loc_latlon[:" "][:ids].size = 15.863
 			# (211898-15863)/211898 ~ 92,5%
 		end
 
@@ -326,13 +326,13 @@ module ProcessHelper
 					# store[:person_id]
 				# ]
 			}
+			
+			byebug
 
 			store_csv(header_loc|header_time, data_loc, "locations")
 			store_csv(header_inst|header_time, data_inst, "instituitions")
 			store_csv(header_people|header_time, data_people, "people")
 			store_csv(header_deg|header_time, data_deg, "degrees")
-			
-			byebug
 			
 			# Location.import(header_loc, data_loc)
 			# Instituition.import(header_inst, data_inst)
