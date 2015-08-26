@@ -46,6 +46,13 @@ cities.each{|city|
 
 Curved point-to-point “route maps”
 curved line
+directional curved line topojson
+
+https://github.com/dkahle/ggmap
+https://www.facebook.com/note.php?note_id=469716398919
+http://flowingdata.com/2011/05/11/how-to-map-connections-with-great-circles/
+http://paulbutler.org/archives/visualizing-facebook-friends/
+http://dsgeek.com/2013/06/08/DrawingArcsonMaps.html
 
 Gallery
 http://cartodb.com/gallery/
@@ -81,11 +88,14 @@ http://plugins.qgis.org/plugins/mmqgis/
 FlowMapper
 http://plugins.qgis.org/plugins/FlowMapper/
 http://gis.stackexchange.com/questions/85394/flow-mapping-lines-by-magnitude
+https://www.youtube.com/watch?v=5zBM97n9GEw
 Flow Trace
 https://github.com/boesiii/flowtrace
 Heat Map
 https://www.youtube.com/watch?v=AqAImLJ1O1g
 https://www.youtube.com/watch?v=h-zX67ewqC4
+Choropleth map
+https://www.youtube.com/watch?v=iM06P7Wq9jQ
 
 https://github.com/nextgis/joinlines
 https://github.com/dgoedkoop/joinmultiplelines

@@ -82,6 +82,7 @@ module ProcessHelper
 			# byebug	
 			# result.size = 211.898
 			# locations.size = 11.870
+			# 11870/211898 ~ 5,6%
 			# loc_latlon.size = 5.917 - 1
 			# (11870-5917-1)/11869 ~ 50%
 			# loc_latlon[:" "][:ids].size = 15.863
@@ -161,6 +162,7 @@ module ProcessHelper
 			# byebug
 			# result.size = 210.551
 			# locations.size = 21.216
+			# 21216/210551 ~ 10%
 			# loc_latlon.size = 646 - 1
 			# (21217-646-1)/21217 ~ 97%
 			# loc_latlon[:" "][:instituitions].size = 19.462
@@ -240,6 +242,7 @@ module ProcessHelper
 			# byebug
 			# result.size = 920.318
 			# locations.size = 71.764
+			# 71764/920318 ~ 7,7%
 			# loc_latlon.size = 639 -1
 			# (71764-639-1)/71764 ~ 99%
 			# loc_latlon[:" "][:instituitions].size = 69.985

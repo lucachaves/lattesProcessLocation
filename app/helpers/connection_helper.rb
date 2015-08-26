@@ -3,9 +3,7 @@ module ConnectionHelper
 	class ConnectionDB
 		def initialize()
 			ip = "192.168.56.101"
-			@geonames = Sequel.connect("postgres://postgres:postgres@#{ip}/geonames")
 			@location_dump = Sequel.connect("postgres://postgres:postgres@#{ip}/latteslocationdumpdoutorado")
-			@cities_br = Sequel.connect("postgres://postgres:postgres@#{ip}/munic")
 		end
 
 		def get_locations()
